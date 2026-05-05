@@ -145,6 +145,9 @@ def pagina_pendencias(
 
     if status:
         q = q.filter(Pendencia.status == status)
+    else:
+        # Por padrão mostra apenas não resolvidas/canceladas
+        q = q.filter(Pendencia.status.notin_([StatusPendencia.resolvida, StatusPendencia.cancelada]))
     if setor:
         q = q.filter(Pendencia.setor == setor)
     if criticidade:

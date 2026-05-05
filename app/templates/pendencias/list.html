@@ -136,14 +136,10 @@
             {{ p.setor }} · {{ p.data_abertura.strftime('%d/%m/%Y') }}
             {% if p.data_limite %} · <span class="text-gray-500">Limite: {{ p.data_limite.strftime('%d/%m/%Y') }}</span>{% endif %}
           </p>
-          <div class="flex items-center gap-3 mt-1">
-            <span class="text-xs text-gray-400">
-              Registrado por <span class="font-medium text-gray-600">{{ item.operador_nome }}</span>
-            </span>
+          <div class="flex items-center gap-2 mt-1 text-xs text-gray-400">
+            <span>Por: <span class="font-medium text-gray-600">{{ item.operador_nome }}</span></span>
             {% if item.responsavel_nome != '—' %}
-            <span class="text-xs text-gray-400">
-              · Responsável: <span class="font-medium text-blue-600">{{ item.responsavel_nome }}</span>
-            </span>
+            <span>· Responsável: <span class="font-medium text-blue-600">{{ item.responsavel_nome }}</span></span>
             {% endif %}
           </div>
         </div>

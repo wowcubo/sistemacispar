@@ -52,8 +52,21 @@
           class="max-h-full max-w-full object-contain rounded-lg" />
       </template>
       <template x-if="galeriaItens[galeriaIndex]?.tipo === 'video'">
-        <iframe :src="galeriaItens[galeriaIndex]?.drive_url?.replace('/view', '/preview')"
-          class="w-full rounded-lg" style="height:60vh;" allow="autoplay" allowfullscreen></iframe>
+        <div class="flex flex-col items-center justify-center gap-4 text-center px-4">
+          <svg class="w-16 h-16 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+          </svg>
+          <p class="text-gray-400 text-sm">Vídeos são abertos diretamente no Drive</p>
+          <a :href="galeriaItens[galeriaIndex]?.drive_url" target="_blank"
+            class="bg-white text-gray-900 font-semibold px-6 py-2.5 rounded-xl text-sm flex items-center gap-2 hover:bg-gray-100 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+            </svg>
+            Abrir vídeo no Drive
+          </a>
+        </div>
       </template>
       <button @click="proximoGaleria()" x-show="galeriaItens.length > 1"
         class="absolute right-2 z-10 w-10 h-10 rounded-full bg-black bg-opacity-50 text-white flex items-center justify-center hover:bg-opacity-80 transition">
@@ -278,7 +291,7 @@
           placeholder="Descreva a ação corretiva realizada..."></textarea>
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Observações <span class="text-xs text-gray-400 font-normal">— opcional</span></label>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Observações </label>
         <input type="text" x-model="novaEtapa.observacoes"
           class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Ex: aguardando peça, parcialmente corrigido..." />
@@ -411,7 +424,7 @@ function detalhePendencia(pendenciaId, papel, setor) {
         if (this.midias.length > 0) {
           await this.uploadMidias('etapa', etapa.id, this.setor);
         }
-        window.location.reload();
+        window.location.href = '/pendencias-page';
       } catch (e) {
         this.erroEtapa = e.message;
         this.salvandoEtapa = false;
