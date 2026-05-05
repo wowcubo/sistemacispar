@@ -1,11 +1,10 @@
 import os
 import io
+import json
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseUpload
-from google.oauth2 import service_account
+
 from app.config import get_settings
 
 settings = get_settings()
@@ -14,9 +13,58 @@ SCOPES = ["https://www.googleapis.com/auth/drive"]
 
 
 def _get_service():
+    """Retorna o serviço do Drive usando OAuth2 (refresh token) ou Service Account como fallback."""
+    from googleapiclient.discovery import build
+
+    # Tenta OAuth2 com refresh token (conta pessoal)
+    if _oauth_disponivel():
+        return _service_oauth()
+
+    # Fallback: service account (funciona apenas com Shared Drives)
+    from google.oauth2 import service_account
     creds = service_account.Credentials.from_service_account_file(
         settings.google_service_account_file, scopes=SCOPES
     )
+    return build("drive", "v3", credentials=creds)
+
+
+def _oauth_disponivel() -> bool:
+    client_file = Path(settings.google_service_account_file).parent / "oauth_client.json"
+    token_file = Path(settings.google_service_account_file).parent / "oauth_token.json"
+    return client_file.exists() and token_file.exists()
+
+
+def _service_oauth():
+    from googleapiclient.discovery import build
+    from google.oauth2.credentials import Credentials
+    from google.auth.transport.requests import Request
+
+    token_file = Path(settings.google_service_account_file).parent / "oauth_token.json"
+    client_file = Path(settings.google_service_account_file).parent / "oauth_client.json"
+
+    with open(client_file) as f:
+        client_info = json.load(f)
+
+    installed = client_info.get("installed") or client_info.get("web")
+
+    with open(token_file) as f:
+        token_data = json.load(f)
+
+    creds = Credentials(
+        token=token_data.get("token"),
+        refresh_token=token_data["refresh_token"],
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=installed["client_id"],
+        client_secret=installed["client_secret"],
+        scopes=SCOPES,
+    )
+
+    if not creds.valid:
+        creds.refresh(Request())
+        token_data["token"] = creds.token
+        with open(token_file, "w") as f:
+            json.dump(token_data, f)
+
     return build("drive", "v3", credentials=creds)
 
 
@@ -53,15 +101,14 @@ def upload_arquivo(
     setor: str,
     ano_mes: Optional[str] = None,
 ) -> dict:
-    """
-    Faz upload para o Google Drive e retorna dict com drive_file_id, drive_url, drive_thumb_url.
-    Se GOOGLE_DRIVE_ROOT_FOLDER_ID não estiver configurado, salva localmente (modo dev).
-    """
+    """Upload para Google Drive. Retorna drive_file_id, drive_url, drive_thumb_url."""
     if not settings.google_drive_root_folder_id:
         return _upload_local(conteudo, nome_original, mime_type)
 
     if not ano_mes:
         ano_mes = datetime.now().strftime("%Y-%m")
+
+    from googleapiclient.http import MediaIoBaseUpload
 
     service = _get_service()
     pasta_id = _pasta_setor(service, setor, ano_mes)
@@ -71,20 +118,23 @@ def upload_arquivo(
     arquivo = service.files().create(body=meta, media_body=media, fields="id").execute()
     file_id = arquivo["id"]
 
-    # tornar público para leitura
+    # Tornar acessível por link
     service.permissions().create(
         fileId=file_id,
         body={"type": "anyone", "role": "reader"},
     ).execute()
 
     drive_url = f"https://drive.google.com/file/d/{file_id}/view"
-    thumb_url = f"https://drive.google.com/thumbnail?id={file_id}&sz=w400" if mime_type.startswith("image") else None
+    thumb_url = (
+        f"https://drive.google.com/thumbnail?id={file_id}&sz=w400"
+        if mime_type.startswith("image")
+        else None
+    )
 
     return {"drive_file_id": file_id, "drive_url": drive_url, "drive_thumb_url": thumb_url}
 
 
 def _upload_local(conteudo: bytes, nome_original: str, mime_type: str) -> dict:
-    """Fallback para desenvolvimento sem credenciais do Drive."""
     uploads_dir = Path("uploads/dev")
     uploads_dir.mkdir(parents=True, exist_ok=True)
     destino = uploads_dir / nome_original
