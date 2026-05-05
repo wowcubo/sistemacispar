@@ -1,64 +1,88 @@
 """
 Script de autorização única do Google Drive via OAuth2.
 
-Execute no servidor APÓS colocar o oauth_client.json em /opt/cispar/credentials/:
-
+Passo 1 — gerar a URL:
     cd /opt/cispar
     venv/bin/python deploy/autorizar_drive.py
 
-Ele vai gerar uma URL — abra no navegador, faça login com a conta Google da empresa
-e cole o código de autorização aqui. O token será salvo em credentials/oauth_token.json.
+Passo 2 — após autorizar no browser, passar o código:
+    venv/bin/python deploy/autorizar_drive.py --codigo SEU_CODIGO_AQUI
 """
 import json
 import sys
+import argparse
+import requests
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from google_auth_oauthlib.flow import InstalledAppFlow
-
-SCOPES = ["https://www.googleapis.com/auth/drive"]
 CLIENT_FILE = Path("credentials/oauth_client.json")
-TOKEN_FILE = Path("credentials/oauth_token.json")
+TOKEN_FILE  = Path("credentials/oauth_token.json")
+REDIRECT    = "urn:ietf:wg:oauth:2.0:oob"
+SCOPE       = "https://www.googleapis.com/auth/drive"
 
 if not CLIENT_FILE.exists():
     print(f"ERRO: {CLIENT_FILE} não encontrado.")
-    print("Baixe o arquivo OAuth no Google Cloud Console e coloque em credentials/oauth_client.json")
     sys.exit(1)
 
-print("=== Autorização do Google Drive para CISPAR ===")
-print()
-print("Iniciando fluxo OAuth2...")
+with open(CLIENT_FILE) as f:
+    info = json.load(f).get("installed") or json.load(open(CLIENT_FILE)).get("web")
 
-flow = InstalledAppFlow.from_client_secrets_file(str(CLIENT_FILE), SCOPES)
+CLIENT_ID     = info["client_id"]
+CLIENT_SECRET = info["client_secret"]
+AUTH_URI      = info.get("auth_uri", "https://accounts.google.com/o/oauth2/auth")
+TOKEN_URI     = info.get("token_uri", "https://oauth2.googleapis.com/token")
 
-# Gera URL para autorização manual (sem abrir browser no servidor)
-flow.redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
-auth_url, _ = flow.authorization_url(
-    access_type="offline",
-    prompt="consent",
-    include_granted_scopes="true",
-)
+parser = argparse.ArgumentParser()
+parser.add_argument("--codigo", help="Código retornado pelo Google após autorizar")
+args = parser.parse_args()
 
-print("Abra este link no seu navegador:")
-print()
-print(auth_url)
-print()
-code = input("Cole aqui o código de autorização: ").strip()
+if not args.codigo:
+    # Passo 1: mostrar URL
+    url = (
+        f"{AUTH_URI}?response_type=code"
+        f"&client_id={CLIENT_ID}"
+        f"&redirect_uri={REDIRECT}"
+        f"&scope={SCOPE}"
+        f"&access_type=offline"
+        f"&prompt=consent"
+    )
+    print("=== Autorização do Google Drive para CISPAR ===")
+    print()
+    print("Abra este link no navegador (conta Google da empresa):")
+    print()
+    print(url)
+    print()
+    print("Após autorizar, copie o código e rode:")
+    print(f"  venv/bin/python deploy/autorizar_drive.py --codigo SEU_CODIGO")
+    sys.exit(0)
 
-flow.fetch_token(code=code)
-creds = flow.credentials
+# Passo 2: trocar código por token
+print("Trocando código por token...")
+resp = requests.post(TOKEN_URI, data={
+    "code":          args.codigo,
+    "client_id":     CLIENT_ID,
+    "client_secret": CLIENT_SECRET,
+    "redirect_uri":  REDIRECT,
+    "grant_type":    "authorization_code",
+})
+
+if not resp.ok:
+    print("ERRO:", resp.text)
+    sys.exit(1)
+
+data = resp.json()
+if "refresh_token" not in data:
+    print("ERRO: refresh_token não retornado. Tente revogar o acesso no Google e repetir.")
+    print(data)
+    sys.exit(1)
 
 token_data = {
-    "token": creds.token,
-    "refresh_token": creds.refresh_token,
-    "client_id": creds.client_id,
-    "client_secret": creds.client_secret,
+    "token":         data.get("access_token"),
+    "refresh_token": data["refresh_token"],
+    "client_id":     CLIENT_ID,
+    "client_secret": CLIENT_SECRET,
 }
 
 TOKEN_FILE.write_text(json.dumps(token_data, indent=2))
 TOKEN_FILE.chmod(0o600)
-
-print()
 print(f"Token salvo em {TOKEN_FILE}")
-print("Autorização concluída! O sistema agora pode fazer uploads para o Drive.")
+print("Autorização concluída! O sistema pode fazer uploads para o Drive.")
