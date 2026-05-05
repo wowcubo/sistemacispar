@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full bg-gray-50">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}{% endblock %} | CISPAR SISBI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    [x-cloak] { display: none !important; }
+    .badge-critica { @apply bg-red-100 text-red-800 text-xs font-semibold px-2 py-0.5 rounded-full; }
+    .badge-maior   { @apply bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-0.5 rounded-full; }
+    .badge-menor   { @apply bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded-full; }
+  </style>
+</head>
+<body class="h-full flex flex-col">
+
+<!-- Navbar -->
+<nav class="bg-blue-700 text-white shadow-md" x-data="{ open: false }">
+  <div class="max-w-7xl mx-auto px-4 flex items-center justify-between h-14">
+    <a href="/" class="font-bold text-lg tracking-wide flex items-center gap-2">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      CISPAR
+    </a>
+
+    <!-- Desktop menu -->
+    <div class="hidden md:flex items-center gap-6 text-sm font-medium">
+      <a href="/" class="hover:text-blue-200 transition">Dashboard</a>
+      <a href="/pendencias-page" class="hover:text-blue-200 transition">Pendências</a>
+      <a href="/checklists-page" class="hover:text-blue-200 transition">Checklists</a>
+      {% if usuario and usuario.papel.value == 'gestor' %}
+      <a href="/admin/usuarios" class="hover:text-blue-200 transition">Usuários</a>
+      {% endif %}
+      <a href="/logout" class="hover:text-blue-200 transition">Sair</a>
+    </div>
+
+    <!-- Mobile hamburger -->
+    <button class="md:hidden p-2" @click="open = !open">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Mobile menu -->
+  <div x-show="open" x-cloak class="md:hidden px-4 pb-3 flex flex-col gap-2 text-sm font-medium border-t border-blue-600">
+    <a href="/" class="py-1 hover:text-blue-200">Dashboard</a>
+    <a href="/pendencias-page" class="py-1 hover:text-blue-200">Pendências</a>
+    <a href="/checklists-page" class="py-1 hover:text-blue-200">Checklists</a>
+    {% if usuario and usuario.papel.value == 'gestor' %}
+    <a href="/admin/usuarios" class="py-1 hover:text-blue-200">Usuários</a>
+    {% endif %}
+    <a href="/logout" class="py-1 hover:text-blue-200">Sair</a>
+  </div>
+</nav>
+
+<!-- Main content -->
+<main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="text-center text-xs text-gray-400 py-3 border-t border-gray-200">
+  CISPAR — Sistema de Rotinas SISBI | Torresminho Caseiro
+</footer>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

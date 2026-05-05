@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Cabeçalho -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+      <p class="text-sm text-gray-500">Olá, {{ usuario.nome }} · {{ usuario.setor.value }}</p>
+    </div>
+    <a href="/pendencias-page/nova"
+      class="bg-blue-700 hover:bg-blue-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Nova Pendência
+    </a>
+  </div>
+
+  <!-- Cards de estatísticas -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+      <p class="text-xs text-gray-500 uppercase tracking-wide">Total</p>
+      <p class="text-3xl font-bold text-gray-900 mt-1">{{ stats.total }}</p>
+      <p class="text-xs text-gray-400 mt-1">pendências</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-red-100 p-4">
+      <p class="text-xs text-red-500 uppercase tracking-wide">Críticas abertas</p>
+      <p class="text-3xl font-bold text-red-600 mt-1">{{ stats.criticas }}</p>
+      <p class="text-xs text-gray-400 mt-1">requer atenção</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-yellow-100 p-4">
+      <p class="text-xs text-yellow-600 uppercase tracking-wide">Em andamento</p>
+      <p class="text-3xl font-bold text-yellow-600 mt-1">{{ stats.em_andamento }}</p>
+      <p class="text-xs text-gray-400 mt-1">em correção</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-green-100 p-4">
+      <p class="text-xs text-green-600 uppercase tracking-wide">Resolvidas</p>
+      <p class="text-3xl font-bold text-green-600 mt-1">{{ stats.resolvidas }}</p>
+      <p class="text-xs text-gray-400 mt-1">conformes</p>
+    </div>
+  </div>
+
+  <!-- Ações rápidas -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <a href="/pendencias-page?status=aberta"
+      class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4 hover:border-blue-400 hover:shadow-sm transition">
+      <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+        <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+      </div>
+      <div>
+        <p class="font-semibold text-gray-800 text-sm">Ver Pendências Abertas</p>
+        <p class="text-xs text-gray-500">{{ stats.abertas }} aguardando ação</p>
+      </div>
+    </a>
+
+    <a href="/checklists-page"
+      class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4 hover:border-blue-400 hover:shadow-sm transition">
+      <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+        </svg>
+      </div>
+      <div>
+        <p class="font-semibold text-gray-800 text-sm">Checklists do Dia</p>
+        <p class="text-xs text-gray-500">Preencher rotina diária</p>
+      </div>
+    </a>
+
+    <a href="/relatorios/pdf"
+      class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4 hover:border-blue-400 hover:shadow-sm transition">
+      <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+      </div>
+      <div>
+        <p class="font-semibold text-gray-800 text-sm">Exportar Relatório PDF</p>
+        <p class="text-xs text-gray-500">Para auditoria SISBI</p>
+      </div>
+    </a>
+  </div>
+
+  <!-- Últimas pendências -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <h2 class="font-semibold text-gray-800">Últimas Pendências</h2>
+      <a href="/pendencias-page" class="text-xs text-blue-600 hover:underline">Ver todas</a>
+    </div>
+
+    {% if ultimas_pendencias %}
+    <div class="divide-y divide-gray-50">
+      {% for p in ultimas_pendencias %}
+      <a href="/pendencias-page/{{ p.id }}"
+        class="flex items-start gap-3 px-5 py-3 hover:bg-gray-50 transition">
+        <div class="mt-0.5">
+          {% if p.criticidade.value == 'critica' %}
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-red-500"></span>
+          {% elif p.criticidade.value == 'maior' %}
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+          {% else %}
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-green-400"></span>
+          {% endif %}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-gray-900 truncate">{{ p.titulo }}</p>
+          <p class="text-xs text-gray-500">{{ p.setor }} · {{ p.data_abertura.strftime('%d/%m/%Y') }}</p>
+        </div>
+        <span class="text-xs px-2 py-0.5 rounded-full flex-shrink-0
+          {% if p.status.value == 'aberta' %}bg-red-100 text-red-700
+          {% elif p.status.value == 'em_andamento' %}bg-yellow-100 text-yellow-700
+          {% elif p.status.value == 'resolvida' %}bg-green-100 text-green-700
+          {% else %}bg-gray-100 text-gray-600{% endif %}">
+          {{ p.status.value.replace('_', ' ') | title }}
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-10 text-gray-400">
+      <svg class="w-10 h-10 mx-auto mb-2 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <p class="text-sm">Nenhuma pendência registrada ainda</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

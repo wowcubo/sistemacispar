@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Ambiente virtual
+venv/
+env/
+.venv/
+.env/
+
+# Variáveis de ambiente (NUNCA commitar)
+.env
+
+# Google credentials (NUNCA commitar)
+credentials/
+
+# Uploads locais (dev)
+uploads/dev/
+
+# Banco de dados local
+*.db
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Alembic versions geradas localmente (manter apenas em repo)
+# migrations/versions/ — NÃO ignorar, commitar as migrations
+
+# Relatórios gerados
+pareceres/

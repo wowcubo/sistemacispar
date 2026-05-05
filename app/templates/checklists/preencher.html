@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block title %}{{ checklist.nome }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-5" x-data="preencherChecklist({{ checklist.id }})">
+
+  <div class="flex items-center gap-3">
+    <a href="/checklists-page" class="text-gray-400 hover:text-gray-600 transition">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="text-xl font-bold text-gray-900">{{ checklist.nome }}</h1>
+      <p class="text-xs text-gray-500">{{ checklist.setor }} · {{ checklist.frequencia.value | title }}</p>
+    </div>
+  </div>
+
+  <!-- Turno e data -->
+  <div class="bg-white rounded-xl border border-gray-200 p-5 grid grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Data <span class="text-red-500">*</span></label>
+      <input type="date" x-model="cabecalho.data" required
+        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Turno <span class="text-red-500">*</span></label>
+      <select x-model="cabecalho.turno" required
+        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="manha">Manhã</option>
+        <option value="tarde">Tarde</option>
+        <option value="noite">Noite</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Itens do checklist -->
+  {% for item in checklist.itens %}
+  {% if item.ativo %}
+  <div class="bg-white rounded-xl border border-gray-200 p-5"
+    :class="respostas[{{ item.id }}] && respostas[{{ item.id }}].conforme === false ? 'border-red-300 bg-red-50' : ''">
+
+    <div class="flex items-start gap-3">
+      {% if item.critico %}
+      <span class="flex-shrink-0 mt-0.5 w-2 h-2 rounded-full bg-red-500 mt-2" title="Item crítico"></span>
+      {% else %}
+      <span class="flex-shrink-0 mt-0.5 w-2 h-2 rounded-full bg-gray-300 mt-2"></span>
+      {% endif %}
+      <div class="flex-1">
+        <p class="text-sm font-medium text-gray-900">
+          {{ loop.index }}. {{ item.descricao }}
+          {% if item.critico %}<span class="text-xs text-red-500 ml-1">(crítico)</span>{% endif %}
+        </p>
+
+        {% if item.tipo.value == 'sim_nao' %}
+        <div class="flex gap-3 mt-3">
+          <button type="button"
+            @click="responder({{ item.id }}, 'sim', true)"
+            :class="respostas[{{ item.id }}] && respostas[{{ item.id }}].conforme === true
+              ? 'bg-green-600 text-white border-green-600'
+              : 'bg-white text-gray-700 border-gray-300 hover:border-green-400'"
+            class="flex-1 border-2 rounded-lg py-2 text-sm font-medium transition">
+            Sim / Conforme
+          </button>
+          <button type="button"
+            @click="responder({{ item.id }}, 'nao', false)"
+            :class="respostas[{{ item.id }}] && respostas[{{ item.id }}].conforme === false
+              ? 'bg-red-600 text-white border-red-600'
+              : 'bg-white text-gray-700 border-gray-300 hover:border-red-400'"
+            class="flex-1 border-2 rounded-lg py-2 text-sm font-medium transition">
+            Não / NC
+          </button>
+        </div>
+
+        {% elif item.tipo.value == 'texto' %}
+        <textarea @input="responder({{ item.id }}, $event.target.value, true)" rows="2"
+          class="mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          placeholder="Digite a observação..."></textarea>
+
+        {% elif item.tipo.value == 'numerico' %}
+        <input type="number" step="any"
+          @input="responder({{ item.id }}, $event.target.value, true)"
+          class="mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Digite o valor..." />
+
+        {% elif item.tipo.value == 'foto_obrigatoria' %}
+        <div class="mt-3">
+          <label class="flex items-center gap-3 cursor-pointer border border-dashed border-gray-300 rounded-xl p-3 hover:border-blue-400 transition">
+            <svg class="w-7 h-7 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <div>
+              <p class="text-sm text-blue-600 font-medium">Tirar foto (obrigatório)</p>
+              <p class="text-xs text-gray-400">Foto ou vídeo</p>
+            </div>
+            <input type="file" accept="image/*,video/*" capture="environment" class="hidden"
+              @change="adicionarFotoItem({{ item.id }}, $event.target.files[0])" />
+          </label>
+          <div x-show="fotosItens[{{ item.id }}]" class="mt-2">
+            <img :src="fotosItens[{{ item.id }}]" class="h-20 w-20 object-cover rounded-lg" />
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Observação opcional -->
+        <input type="text"
+          @input="setObservacao({{ item.id }}, $event.target.value)"
+          class="mt-2 w-full border-0 border-b border-gray-200 px-0 py-1 text-xs text-gray-500 focus:outline-none focus:border-blue-400 bg-transparent"
+          placeholder="Observação (opcional)..." />
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+
+  <!-- Erro e submit -->
+  <div x-show="erro" x-cloak class="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg" x-text="erro"></div>
+
+  <button @click="enviar" :disabled="salvando"
+    class="w-full bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition text-sm">
+    <span x-show="!salvando">Concluir Checklist</span>
+    <span x-show="salvando" x-cloak>Salvando...</span>
+  </button>
+
+  <!-- Progresso -->
+  <div class="flex items-center gap-2 text-xs text-gray-500 justify-center pb-4">
+    <span x-text="Object.keys(respostas).length"></span> de {{ checklist.itens | selectattr('ativo') | list | length }} itens respondidos
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function preencherChecklist(checklistId) {
+  const hoje = new Date().toISOString().split('T')[0];
+  const hora = new Date().getHours();
+  const turnoInicial = hora < 12 ? 'manha' : hora < 18 ? 'tarde' : 'noite';
+
+  return {
+    checklistId,
+    cabecalho: { data: hoje, turno: turnoInicial },
+    respostas: {},
+    fotosItens: {},
+    arquivosItens: {},
+    salvando: false,
+    erro: '',
+
+    responder(itemId, valor, conforme) {
+      this.respostas[itemId] = { item_id: itemId, resposta: String(valor), conforme };
+    },
+
+    setObservacao(itemId, obs) {
+      if (!this.respostas[itemId]) this.respostas[itemId] = { item_id: itemId, resposta: null, conforme: null };
+      this.respostas[itemId].observacao = obs;
+    },
+
+    adicionarFotoItem(itemId, file) {
+      if (!file) return;
+      this.fotosItens[itemId] = URL.createObjectURL(file);
+      this.arquivosItens[itemId] = file;
+      this.responder(itemId, 'foto', true);
+    },
+
+    async enviar() {
+      if (!this.cabecalho.data || !this.cabecalho.turno) {
+        this.erro = 'Informe a data e o turno.';
+        return;
+      }
+      this.erro = '';
+      this.salvando = true;
+      try {
+        const payload = {
+          checklist_id: this.checklistId,
+          data: this.cabecalho.data,
+          turno: this.cabecalho.turno,
+          respostas: Object.values(this.respostas),
+        };
+        const res = await fetch('/checklists/registros', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error((await res.json()).detail || 'Erro ao salvar');
+        const registro = await res.json();
+
+        // Upload de fotos obrigatórias
+        for (const [itemId, file] of Object.entries(this.arquivosItens)) {
+          const fd = new FormData();
+          fd.append('arquivo', file);
+          fd.append('entidade_tipo', 'resposta');
+          // buscar id da resposta seria complexo; associamos à resposta pelo registro por hora
+          fd.append('entidade_id', registro.id);
+          fd.append('setor', 'Geral');
+          await fetch('/uploads/', { method: 'POST', body: fd });
+        }
+
+        window.location.href = '/checklists-page';
+      } catch (e) {
+        this.erro = e.message;
+        this.salvando = false;
+      }
+    },
+  };
+}
+</script>
+{% endblock %}
