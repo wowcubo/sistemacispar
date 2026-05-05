@@ -160,11 +160,22 @@ def pagina_pendencias(
     pagina = max(1, min(pagina, total_paginas))
     pendencias_list = q.order_by(Pendencia.criado_em.desc()).offset((pagina - 1) * POR_PAGINA).limit(POR_PAGINA).all()
 
-    # Enriquece com nome do operador e responsável
+    from app.models.pendencia import EtapaVerificacao
+
+    # Enriquece com nome do operador, responsável e etapas aguardando aprovação
     def enrich(p):
         op = db.get(Usuario, p.operador_id)
         resp = db.get(Usuario, p.responsavel_id) if p.responsavel_id else None
-        return {"pendencia": p, "operador_nome": op.nome if op else "—", "responsavel_nome": resp.nome if resp else "—"}
+        pendente = db.query(EtapaVerificacao).filter(
+            EtapaVerificacao.pendencia_id == p.id,
+            EtapaVerificacao.resultado == None,
+        ).count() > 0
+        return {
+            "pendencia": p,
+            "operador_nome": op.nome if op else "—",
+            "responsavel_nome": resp.nome if resp else "—",
+            "pendente_aprovacao": pendente,
+        }
 
     responsaveis = (
         db.query(Usuario)

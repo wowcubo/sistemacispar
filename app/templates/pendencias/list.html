@@ -131,6 +131,11 @@
               {% else %}bg-gray-100 text-gray-500{% endif %}">
               {{ p.status.value.replace('_', ' ') | title }}
             </span>
+            {% if item.pendente_aprovacao %}
+            <span class="text-xs px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 bg-green-100 text-green-700">
+              Aguard. Aprovação
+            </span>
+            {% endif %}
           </div>
           <p class="text-xs text-gray-400 mt-0.5">
             {{ p.setor }} · {{ p.data_abertura.strftime('%d/%m/%Y') }}
