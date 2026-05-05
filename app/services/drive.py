@@ -1,6 +1,6 @@
-import os
 import io
 import json
+import mimetypes
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -13,14 +13,11 @@ SCOPES = ["https://www.googleapis.com/auth/drive"]
 
 
 def _get_service():
-    """Retorna o serviço do Drive usando OAuth2 (refresh token) ou Service Account como fallback."""
     from googleapiclient.discovery import build
 
-    # Tenta OAuth2 com refresh token (conta pessoal)
     if _oauth_disponivel():
         return _service_oauth()
 
-    # Fallback: service account (funciona apenas com Shared Drives)
     from google.oauth2 import service_account
     creds = service_account.Credentials.from_service_account_file(
         settings.google_service_account_file, scopes=SCOPES
@@ -87,10 +84,19 @@ def _obter_ou_criar_pasta(service, nome: str, parent_id: str) -> str:
     return folder["id"]
 
 
-def _pasta_setor(service, setor: str, ano_mes: str) -> str:
+def _pasta_destino(service, setor: str, ano_mes: str, entidade_tipo: Optional[str], entidade_id: Optional[int]) -> str:
+    """
+    Estrutura: root/2026-05/Producao/pendencia_42/
+    Se não houver entidade, fica em: root/2026-05/Producao/
+    """
     root = settings.google_drive_root_folder_id
     pasta_mes = _obter_ou_criar_pasta(service, ano_mes, root)
     pasta_setor = _obter_ou_criar_pasta(service, setor, pasta_mes)
+
+    if entidade_tipo and entidade_id is not None:
+        nome_entidade = f"{entidade_tipo}_{entidade_id}"
+        return _obter_ou_criar_pasta(service, nome_entidade, pasta_setor)
+
     return pasta_setor
 
 
@@ -100,8 +106,10 @@ def upload_arquivo(
     mime_type: str,
     setor: str,
     ano_mes: Optional[str] = None,
+    entidade_tipo: Optional[str] = None,
+    entidade_id: Optional[int] = None,
 ) -> dict:
-    """Upload para Google Drive. Retorna drive_file_id, drive_url, drive_thumb_url."""
+    """Upload para Google Drive. Retorna drive_file_id, drive_url, drive_embed_url, drive_thumb_url."""
     if not settings.google_drive_root_folder_id:
         return _upload_local(conteudo, nome_original, mime_type)
 
@@ -111,27 +119,33 @@ def upload_arquivo(
     from googleapiclient.http import MediaIoBaseUpload
 
     service = _get_service()
-    pasta_id = _pasta_setor(service, setor, ano_mes)
+    pasta_id = _pasta_destino(service, setor, ano_mes, entidade_tipo, entidade_id)
 
     media = MediaIoBaseUpload(io.BytesIO(conteudo), mimetype=mime_type, resumable=True)
     meta = {"name": nome_original, "parents": [pasta_id]}
     arquivo = service.files().create(body=meta, media_body=media, fields="id").execute()
     file_id = arquivo["id"]
 
-    # Tornar acessível por link
     service.permissions().create(
         fileId=file_id,
         body={"type": "anyone", "role": "reader"},
     ).execute()
 
     drive_url = f"https://drive.google.com/file/d/{file_id}/view"
-    thumb_url = (
-        f"https://drive.google.com/thumbnail?id={file_id}&sz=w400"
-        if mime_type.startswith("image")
-        else None
-    )
+    embed_url = f"https://drive.google.com/file/d/{file_id}/preview"
 
-    return {"drive_file_id": file_id, "drive_url": drive_url, "drive_thumb_url": thumb_url}
+    # lh3.googleusercontent.com serve a imagem diretamente sem exigir login Google
+    if mime_type.startswith("image"):
+        thumb_url = f"https://lh3.googleusercontent.com/d/{file_id}"
+    else:
+        thumb_url = None
+
+    return {
+        "drive_file_id": file_id,
+        "drive_url": drive_url,
+        "drive_embed_url": embed_url,
+        "drive_thumb_url": thumb_url,
+    }
 
 
 def _upload_local(conteudo: bytes, nome_original: str, mime_type: str) -> dict:
@@ -141,4 +155,9 @@ def _upload_local(conteudo: bytes, nome_original: str, mime_type: str) -> dict:
     destino.write_bytes(conteudo)
     fake_id = f"local_{nome_original}"
     url = f"/uploads/dev/{nome_original}"
-    return {"drive_file_id": fake_id, "drive_url": url, "drive_thumb_url": url if mime_type.startswith("image") else None}
+    return {
+        "drive_file_id": fake_id,
+        "drive_url": url,
+        "drive_embed_url": url,
+        "drive_thumb_url": url if mime_type.startswith("image") else None,
+    }

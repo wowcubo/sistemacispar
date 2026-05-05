@@ -41,6 +41,8 @@ async def upload(
         nome_original=arquivo.filename or "arquivo",
         mime_type=mime,
         setor=setor,
+        entidade_tipo=entidade_tipo.value,
+        entidade_id=entidade_id,
     )
 
     midia = ArquivoMidia(

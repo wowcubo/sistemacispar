@@ -2,47 +2,49 @@
 {% block title %}Nova Pendência{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto space-y-5" x-data="Object.assign(camera(), novaPendencia())">
+<div class="max-w-2xl mx-auto space-y-4" x-data="Object.assign(camera(), novaPendencia())">
 
   {% include '_camera_modal.html' %}
 
   <div class="flex items-center gap-3">
-    <a href="/pendencias-page" class="text-gray-400 hover:text-gray-600 transition">
+    <a href="/pendencias-page" class="text-gray-400 hover:text-gray-600 transition flex-shrink-0">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
       </svg>
     </a>
-    <h1 class="text-2xl font-bold text-gray-900">Nova Pendência</h1>
+    <h1 class="text-xl font-bold text-gray-900">Nova Pendência</h1>
   </div>
 
-  <div class="bg-white rounded-xl border border-gray-200 p-6">
-    <form @submit.prevent="enviar" class="space-y-5">
+  <!-- Formulário -->
+  <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+    <form @submit.prevent="enviar" class="divide-y divide-gray-100">
 
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Título <span class="text-red-500">*</span></label>
+      <!-- Título -->
+      <div class="px-5 py-4">
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Título <span class="text-red-500">*</span></label>
         <input type="text" x-model="form.titulo" required
-          class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Descreva brevemente o problema" />
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Setor + Criticidade -->
+      <div class="px-5 py-4 grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Setor <span class="text-red-500">*</span></label>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Setor <span class="text-red-500">*</span></label>
           <select x-model="form.setor" required
-            class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="">Selecione...</option>
-            <option>Produção</option>
-            <option>Manutenção</option>
-            <option>Qualidade</option>
-            <option>Almoxarifado</option>
-            <option>Administrativo</option>
-            <option>Geral</option>
+            class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="Geral">Geral</option>
+            <option value="Produção">Produção</option>
+            <option value="Manutenção">Manutenção</option>
+            <option value="Qualidade">Qualidade</option>
+            <option value="Almoxarifado">Almoxarifado</option>
+            <option value="Administrativo">Administrativo</option>
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Criticidade <span class="text-red-500">*</span></label>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Criticidade <span class="text-red-500">*</span></label>
           <select x-model="form.criticidade" required
-            class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="menor">Menor</option>
             <option value="maior">Maior</option>
             <option value="critica">Crítica</option>
@@ -50,40 +52,38 @@
         </div>
       </div>
 
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Data limite</label>
+      <!-- Data limite -->
+      <div class="px-5 py-4">
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Data Limite <span class="text-xs text-gray-300 font-normal normal-case">— opcional</span></label>
         <input type="date" x-model="form.data_limite"
-          class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
 
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Descrição <span class="text-red-500">*</span></label>
+      <!-- Descrição -->
+      <div class="px-5 py-4">
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Descrição <span class="text-red-500">*</span></label>
         <textarea x-model="form.descricao" required rows="4"
-          class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           placeholder="Descreva o problema em detalhes..."></textarea>
       </div>
 
-      <!-- Captura de mídia -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          Fotos / Vídeos
-          <span class="text-xs text-gray-400 font-normal ml-1">— câmera apenas, sem galeria</span>
-        </label>
+      <!-- Fotos / Vídeos -->
+      <div class="px-5 py-4">
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Fotos / Vídeos</label>
 
-        <div class="flex gap-3">
+        <div class="flex gap-2">
           <button type="button" @click="abrirCamera('foto')"
             class="flex-1 flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 rounded-xl py-4 text-sm font-medium text-gray-600 hover:text-blue-700 transition">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
             Tirar Foto
           </button>
-
           <button type="button" @click="abrirCamera('video')"
             class="flex-1 flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 hover:border-red-500 hover:bg-red-50 rounded-xl py-4 text-sm font-medium text-gray-600 hover:text-red-700 transition">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
             </svg>
@@ -91,7 +91,7 @@
           </button>
         </div>
 
-        <!-- Prévia das mídias capturadas -->
+        <!-- Pré-visualização -->
         <div x-show="midias.length > 0" class="mt-3 grid grid-cols-3 gap-2">
           <template x-for="(m, idx) in midias" :key="idx">
             <div class="relative rounded-xl overflow-hidden bg-gray-900 aspect-square">
@@ -99,49 +99,51 @@
                 <img :src="m.preview" class="w-full h-full object-cover" />
               </template>
               <template x-if="m.tipo === 'video'">
-                <video :src="m.preview" class="w-full h-full object-cover" muted playsinline></video>
+                <div class="w-full h-full flex flex-col items-center justify-center gap-1">
+                  <svg class="w-6 h-6 text-white opacity-70" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                  <span class="text-xs text-gray-400">Vídeo</span>
+                </div>
               </template>
-              <div class="absolute bottom-1 left-1 text-xs px-1.5 py-0.5 rounded-full font-medium"
+              <div class="absolute bottom-1 left-1 text-xs px-1.5 py-0.5 rounded-full font-medium shadow"
                 :class="m.tipo === 'foto' ? 'bg-blue-600 text-white' : 'bg-red-600 text-white'"
                 x-text="m.tipo === 'foto' ? '📷' : '🎥'"></div>
               <button type="button" @click="removerMidia(idx)"
-                class="absolute top-1 right-1 w-6 h-6 bg-black bg-opacity-60 text-white rounded-full flex items-center justify-center text-sm hover:bg-opacity-90 transition">
-                ×
-              </button>
+                class="absolute top-1 right-1 w-6 h-6 bg-black bg-opacity-60 text-white rounded-full flex items-center justify-center text-sm hover:bg-opacity-90 transition">×</button>
             </div>
           </template>
 
-          <!-- Botão adicionar mais -->
           <button type="button" @click="abrirCamera('foto')"
             class="aspect-square rounded-xl border-2 border-dashed border-gray-300 hover:border-blue-400 flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-blue-500 transition">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
             <span class="text-xs">Mais</span>
           </button>
         </div>
 
-        <p x-show="midias.length > 0" class="text-xs text-gray-400 mt-1">
+        <p x-show="midias.length > 0" class="text-xs text-gray-400 mt-1.5">
           <span x-text="midias.length"></span> arquivo(s) capturado(s)
         </p>
       </div>
 
-      <!-- Erro câmera -->
-      <div x-show="erro" x-cloak class="p-3 bg-orange-50 border border-orange-200 text-orange-700 text-sm rounded-lg" x-text="erro"></div>
+      <!-- Erros e botão -->
+      <div class="px-5 py-4 space-y-3">
+        <div x-show="erro" x-cloak class="p-3 bg-orange-50 border border-orange-200 text-orange-700 text-sm rounded-xl" x-text="erro"></div>
+        <div x-show="erroEnvio" x-cloak class="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl" x-text="erroEnvio"></div>
 
-      <!-- Erro envio -->
-      <div x-show="erroEnvio" x-cloak class="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg" x-text="erroEnvio"></div>
-
-      <div class="flex gap-3 pt-2">
-        <button type="submit" :disabled="salvando"
-          class="flex-1 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg transition text-sm">
-          <span x-show="!salvando">Registrar Pendência</span>
-          <span x-show="salvando" x-cloak>Salvando...</span>
-        </button>
-        <a href="/pendencias-page"
-          class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition text-center">
-          Cancelar
-        </a>
+        <div class="flex gap-3">
+          <button type="submit" :disabled="salvando"
+            class="flex-1 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition text-sm">
+            <span x-show="!salvando">Registrar Pendência</span>
+            <span x-show="salvando" x-cloak>
+              <span class="inline-block animate-spin mr-1">⏳</span> Salvando...
+            </span>
+          </button>
+          <a href="/pendencias-page"
+            class="px-5 py-3 border border-gray-300 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition text-center">
+            Cancelar
+          </a>
+        </div>
       </div>
 
     </form>
@@ -154,7 +156,7 @@
 <script>
 function novaPendencia() {
   return {
-    form: { titulo: '', setor: '', criticidade: 'menor', descricao: '', data_limite: '' },
+    form: { titulo: '', setor: 'Geral', criticidade: 'menor', descricao: '', data_limite: '' },
     salvando: false,
     erroEnvio: '',
 

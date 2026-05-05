@@ -177,13 +177,24 @@ def pagina_detalhe_pendencia(
         ArquivoMidia.entidade_id == id,
     ).all()
 
+    def midia_dict(m):
+        return {
+            "tipo": m.tipo.value,
+            "drive_url": m.drive_url,
+            "drive_thumb_url": m.drive_thumb_url,
+        }
+
     etapas_com_midia = []
-    for e in p.etapas:
+    for e in sorted(p.etapas, key=lambda x: x.numero):
         midias_etapa = db.query(ArquivoMidia).filter(
             ArquivoMidia.entidade_tipo == EntidadeTipo.etapa,
             ArquivoMidia.entidade_id == e.id,
         ).all()
-        etapas_com_midia.append({"etapa": e, "midias": midias_etapa})
+        etapas_com_midia.append({
+            "etapa": e,
+            "midias": midias_etapa,
+            "midias_json": [midia_dict(m) for m in midias_etapa],
+        })
 
     return templates.TemplateResponse("pendencias/detalhe.html", {
         "request": request,
@@ -191,6 +202,7 @@ def pagina_detalhe_pendencia(
         "settings": settings,
         "pendencia": p,
         "midias": midias_pendencia,
+        "midias_json": [midia_dict(m) for m in midias_pendencia],
         "etapas": etapas_com_midia,
     })
 

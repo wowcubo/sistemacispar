@@ -2,20 +2,98 @@
 {% block title %}Pendência #{{ pendencia.id }}{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto space-y-5" x-data="Object.assign(camera(), detalhePendencia({{ pendencia.id }}, '{{ usuario.papel.value }}', '{{ pendencia.setor }}'))">
+<div class="max-w-3xl mx-auto space-y-4"
+  x-data="Object.assign(camera(), galeria(), detalhePendencia({{ pendencia.id }}, '{{ usuario.papel.value }}', '{{ pendencia.setor }}'))">
 
   {% include '_camera_modal.html' %}
 
+  <!-- Lightbox galeria -->
+  <div x-show="galeriaAberta" x-cloak
+    class="fixed inset-0 z-50 bg-black bg-opacity-95 flex flex-col"
+    @keydown.escape.window="fecharGaleria()"
+    @keydown.arrow-left.window="anteriorGaleria()"
+    @keydown.arrow-right.window="proximoGaleria()">
+
+    <!-- Topo -->
+    <div class="flex items-center justify-between px-4 py-3 flex-shrink-0">
+      <span class="text-white text-sm font-medium"
+        x-text="(galeriaIndex + 1) + ' / ' + galeriaItens.length"></span>
+      <div class="flex items-center gap-3">
+        <a :href="galeriaItens[galeriaIndex]?.drive_url" target="_blank"
+          class="text-gray-400 hover:text-white text-xs flex items-center gap-1 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+          </svg>
+          Abrir no Drive
+        </a>
+        <button @click="fecharGaleria()" class="text-gray-400 hover:text-white transition">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mídia -->
+    <div class="flex-1 flex items-center justify-center px-4 min-h-0 relative">
+      <button @click="anteriorGaleria()" x-show="galeriaItens.length > 1"
+        class="absolute left-2 z-10 w-10 h-10 rounded-full bg-black bg-opacity-50 text-white flex items-center justify-center hover:bg-opacity-80 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </button>
+
+      <template x-if="galeriaItens[galeriaIndex]?.tipo === 'foto'">
+        <img :src="galeriaItens[galeriaIndex]?.thumb_url || galeriaItens[galeriaIndex]?.drive_url"
+          class="max-h-full max-w-full object-contain rounded-lg" />
+      </template>
+      <template x-if="galeriaItens[galeriaIndex]?.tipo === 'video'">
+        <iframe :src="galeriaItens[galeriaIndex]?.embed_url"
+          class="w-full rounded-lg" style="height: 60vh;"
+          allow="autoplay" allowfullscreen></iframe>
+      </template>
+
+      <button @click="proximoGaleria()" x-show="galeriaItens.length > 1"
+        class="absolute right-2 z-10 w-10 h-10 rounded-full bg-black bg-opacity-50 text-white flex items-center justify-center hover:bg-opacity-80 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Miniaturas -->
+    <div x-show="galeriaItens.length > 1"
+      class="flex gap-2 px-4 py-3 overflow-x-auto flex-shrink-0">
+      <template x-for="(item, idx) in galeriaItens" :key="idx">
+        <button @click="galeriaIndex = idx"
+          class="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition"
+          :class="idx === galeriaIndex ? 'border-white' : 'border-transparent opacity-50 hover:opacity-80'">
+          <template x-if="item.tipo === 'foto'">
+            <img :src="item.thumb_url" class="w-full h-full object-cover" />
+          </template>
+          <template x-if="item.tipo === 'video'">
+            <div class="w-full h-full bg-gray-700 flex items-center justify-center">
+              <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </div>
+          </template>
+        </button>
+      </template>
+    </div>
+  </div>
+
   <!-- Cabeçalho -->
   <div class="flex items-start gap-3">
-    <a href="/pendencias-page" class="text-gray-400 hover:text-gray-600 transition mt-1">
+    <a href="/pendencias-page" class="text-gray-400 hover:text-gray-600 transition mt-1 flex-shrink-0">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
       </svg>
     </a>
-    <div class="flex-1">
+    <div class="flex-1 min-w-0">
       <div class="flex flex-wrap items-center gap-2 mb-1">
-        <span class="text-xs text-gray-400">#{{ pendencia.id }}</span>
+        <span class="text-xs text-gray-400 font-mono">#{{ pendencia.id }}</span>
         {% if pendencia.criticidade.value == 'critica' %}
         <span class="bg-red-100 text-red-800 text-xs font-semibold px-2 py-0.5 rounded-full">Crítica</span>
         {% elif pendencia.criticidade.value == 'maior' %}
@@ -23,7 +101,7 @@
         {% else %}
         <span class="bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded-full">Menor</span>
         {% endif %}
-        <span class="text-xs px-2 py-0.5 rounded-full
+        <span class="text-xs px-2 py-0.5 rounded-full font-medium
           {% if pendencia.status.value == 'aberta' %}bg-red-50 text-red-700
           {% elif pendencia.status.value == 'em_andamento' %}bg-yellow-50 text-yellow-700
           {% elif pendencia.status.value == 'resolvida' %}bg-green-50 text-green-700
@@ -31,161 +109,181 @@
           {{ pendencia.status.value.replace('_', ' ') | title }}
         </span>
       </div>
-      <h1 class="text-xl font-bold text-gray-900">{{ pendencia.titulo }}</h1>
-      <p class="text-sm text-gray-500 mt-0.5">
+      <h1 class="text-xl font-bold text-gray-900 leading-snug">{{ pendencia.titulo }}</h1>
+      <p class="text-xs text-gray-500 mt-1">
         {{ pendencia.setor }} · Aberta em {{ pendencia.data_abertura.strftime('%d/%m/%Y') }}
-        {% if pendencia.data_limite %} · Limite: <span class="font-medium text-gray-700">{{ pendencia.data_limite.strftime('%d/%m/%Y') }}</span>{% endif %}
-        {% if pendencia.data_resolucao %} · Resolvida em <span class="font-medium text-green-700">{{ pendencia.data_resolucao.strftime('%d/%m/%Y') }}</span>{% endif %}
+        {% if pendencia.data_limite %} · <span class="font-medium text-gray-700">Limite: {{ pendencia.data_limite.strftime('%d/%m/%Y') }}</span>{% endif %}
+        {% if pendencia.data_resolucao %} · <span class="font-medium text-green-700">Resolvida em {{ pendencia.data_resolucao.strftime('%d/%m/%Y') }}</span>{% endif %}
       </p>
     </div>
   </div>
 
-  <!-- Descrição + mídias da pendência -->
-  <div class="bg-white rounded-xl border border-gray-200 p-5">
-    <h2 class="text-sm font-semibold text-gray-700 mb-2">Descrição</h2>
-    <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ pendencia.descricao }}</p>
+  <!-- Descrição e mídias da pendência -->
+  <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+    <div class="px-5 pt-5 pb-4">
+      <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Descrição</h2>
+      <p class="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">{{ pendencia.descricao }}</p>
+    </div>
 
     {% if midias %}
-    <div class="mt-4 grid grid-cols-3 sm:grid-cols-4 gap-2">
-      {% for m in midias %}
-      <a href="{{ m.drive_url }}" target="_blank"
-        class="rounded-xl overflow-hidden bg-gray-100 aspect-square block hover:opacity-80 transition relative">
-        {% if m.tipo.value == 'foto' and m.drive_thumb_url %}
-        <img src="{{ m.drive_thumb_url }}" class="w-full h-full object-cover" />
-        {% else %}
-        <div class="w-full h-full flex flex-col items-center justify-center gap-1 bg-gray-900">
-          <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-          </svg>
-          <span class="text-xs text-gray-400">Vídeo</span>
-        </div>
-        {% endif %}
-        <span class="absolute bottom-1 left-1 text-xs px-1.5 py-0.5 rounded-full font-medium
-          {{ 'bg-blue-600' if m.tipo.value == 'foto' else 'bg-red-600' }} text-white">
-          {{ '📷' if m.tipo.value == 'foto' else '🎥' }}
-        </span>
-      </a>
-      {% endfor %}
+    <div class="border-t border-gray-100 px-5 py-4">
+      <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+        Evidências ({{ midias | length }})
+      </h2>
+      <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+        {% for m in midias %}
+        <button type="button"
+          @click="abrirGaleria({{ loop.index0 }}, {{ midias_json | tojson | e }})"
+          class="relative rounded-xl overflow-hidden bg-gray-100 aspect-square hover:opacity-90 transition group">
+          {% if m.tipo.value == 'foto' and m.drive_thumb_url %}
+          <img src="{{ m.drive_thumb_url }}" class="w-full h-full object-cover" />
+          {% else %}
+          <div class="w-full h-full bg-gray-900 flex flex-col items-center justify-center gap-1">
+            <svg class="w-7 h-7 text-white opacity-70" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+            <span class="text-xs text-gray-400">Vídeo</span>
+          </div>
+          {% endif %}
+          <span class="absolute bottom-1.5 left-1.5 text-xs px-1.5 py-0.5 rounded-full font-medium
+            {{ 'bg-blue-600' if m.tipo.value == 'foto' else 'bg-red-600' }} text-white shadow">
+            {{ '📷' if m.tipo.value == 'foto' else '🎥' }}
+          </span>
+          <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition flex items-center justify-center">
+            <svg class="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
+            </svg>
+          </div>
+        </button>
+        {% endfor %}
+      </div>
     </div>
     {% endif %}
   </div>
 
-  <!-- Timeline de etapas -->
-  <div class="bg-white rounded-xl border border-gray-200 p-5">
-    <h2 class="text-sm font-semibold text-gray-700 mb-4">Histórico de Verificações</h2>
+  <!-- Histórico de etapas -->
+  <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+    <div class="px-5 pt-5 pb-1">
+      <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+        Histórico de Correções
+        <span class="ml-1 text-gray-300">{{ etapas | length }}</span>
+      </h2>
+    </div>
 
     {% if etapas %}
-    <ol class="relative border-l border-gray-200 space-y-6 ml-3">
+    <div class="divide-y divide-gray-100">
       {% for item in etapas %}
       {% set e = item.etapa %}
-      <li class="ml-5">
-        <span class="absolute -left-2.5 flex items-center justify-center w-5 h-5 rounded-full
-          {% if e.resultado and e.resultado.value == 'conforme' %}bg-green-100 ring-2 ring-green-400
-          {% elif e.resultado and e.resultado.value == 'nao_conforme' %}bg-red-100 ring-2 ring-red-400
-          {% else %}bg-blue-100 ring-2 ring-blue-400{% endif %}">
-          {% if e.resultado and e.resultado.value == 'conforme' %}
-          <svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
-          </svg>
-          {% elif e.resultado and e.resultado.value == 'nao_conforme' %}
-          <svg class="w-3 h-3 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/>
-          </svg>
+      <div class="px-5 py-4">
+        <!-- Linha de status da etapa -->
+        <div class="flex items-center gap-2 mb-2">
+          <span class="flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold flex-shrink-0
+            {% if e.resultado and e.resultado.value == 'conforme' %}bg-green-100 text-green-700
+            {% elif e.resultado and e.resultado.value == 'nao_conforme' %}bg-red-100 text-red-700
+            {% else %}bg-blue-100 text-blue-700{% endif %}">
+            {{ e.numero }}
+          </span>
+          {% if e.resultado %}
+          <span class="text-xs font-semibold px-2 py-0.5 rounded-full
+            {% if e.resultado.value == 'conforme' %}bg-green-100 text-green-700
+            {% elif e.resultado.value == 'nao_conforme' %}bg-red-100 text-red-700
+            {% else %}bg-yellow-100 text-yellow-700{% endif %}">
+            {% if e.resultado.value == 'conforme' %}✓ Aprovada{% elif e.resultado.value == 'nao_conforme' %}✗ Reprovada{% else %}Parcial{% endif %}
+          </span>
           {% else %}
-          <span class="w-2 h-2 bg-blue-400 rounded-full block"></span>
+          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">Aguardando avaliação</span>
           {% endif %}
-        </span>
-
-        <div class="bg-gray-50 rounded-lg p-3 border border-gray-100">
-          <div class="flex items-center gap-2 mb-1">
-            <span class="text-xs font-semibold text-gray-600">Etapa {{ e.numero }}</span>
-            {% if e.resultado %}
-            <span class="text-xs px-2 py-0.5 rounded-full
-              {% if e.resultado.value == 'conforme' %}bg-green-100 text-green-700
-              {% elif e.resultado.value == 'nao_conforme' %}bg-red-100 text-red-700
-              {% else %}bg-yellow-100 text-yellow-700{% endif %}">
-              {{ e.resultado.value.replace('_', ' ') | title }}
-            </span>
-            {% else %}
-            <span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Aguardando avaliação</span>
-            {% endif %}
-            <span class="text-xs text-gray-400 ml-auto">{{ e.data.strftime('%d/%m/%Y %H:%M') }}</span>
-          </div>
-          <p class="text-sm text-gray-700">{{ e.descricao_acao }}</p>
-          {% if e.observacoes %}
-          <p class="text-xs text-gray-500 mt-1 italic">{{ e.observacoes }}</p>
-          {% endif %}
-
-          {% if item.midias %}
-          <div class="mt-2 grid grid-cols-4 gap-1.5">
-            {% for m in item.midias %}
-            <a href="{{ m.drive_url }}" target="_blank"
-              class="rounded-lg overflow-hidden bg-gray-900 aspect-square block hover:opacity-80 transition relative">
-              {% if m.tipo.value == 'foto' and m.drive_thumb_url %}
-              <img src="{{ m.drive_thumb_url }}" class="w-full h-full object-cover" />
-              {% else %}
-              <div class="w-full h-full flex items-center justify-center">
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                </svg>
-              </div>
-              {% endif %}
-              <span class="absolute bottom-0.5 left-0.5 text-xs">{{ '📷' if m.tipo.value == 'foto' else '🎥' }}</span>
-            </a>
-            {% endfor %}
-          </div>
-          {% endif %}
-
-          {% if not e.resultado and usuario.papel.value in ['supervisor', 'gestor'] %}
-          <div class="mt-3 flex gap-2">
-            <button @click="aprovarEtapa({{ e.id }}, 'conforme')"
-              class="flex-1 text-xs bg-green-600 hover:bg-green-700 text-white py-1.5 rounded-lg transition font-medium">
-              ✓ Aprovar (Conforme)
-            </button>
-            <button @click="aprovarEtapa({{ e.id }}, 'nao_conforme')"
-              class="flex-1 text-xs bg-red-600 hover:bg-red-700 text-white py-1.5 rounded-lg transition font-medium">
-              ✗ Reprovar
-            </button>
-          </div>
-          {% endif %}
+          <span class="text-xs text-gray-400 ml-auto">{{ e.data.strftime('%d/%m/%Y %H:%M') }}</span>
         </div>
-      </li>
+
+        <!-- Descrição da ação -->
+        <p class="text-sm text-gray-800 leading-relaxed mb-1">{{ e.descricao_acao }}</p>
+        {% if e.observacoes %}
+        <p class="text-xs text-gray-500 italic">{{ e.observacoes }}</p>
+        {% endif %}
+
+        <!-- Galeria da etapa -->
+        {% if item.midias %}
+        <div class="mt-3 grid grid-cols-4 gap-1.5">
+          {% for m in item.midias %}
+          <button type="button"
+            @click="abrirGaleria({{ loop.index0 }}, {{ item.midias_json | tojson | e }})"
+            class="relative rounded-lg overflow-hidden bg-gray-900 aspect-square hover:opacity-90 transition group">
+            {% if m.tipo.value == 'foto' and m.drive_thumb_url %}
+            <img src="{{ m.drive_thumb_url }}" class="w-full h-full object-cover" />
+            {% else %}
+            <div class="w-full h-full flex items-center justify-center">
+              <svg class="w-5 h-5 text-white opacity-60" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </div>
+            {% endif %}
+            <span class="absolute bottom-0.5 left-0.5 text-xs">{{ '📷' if m.tipo.value == 'foto' else '🎥' }}</span>
+          </button>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Botões aprovar/reprovar -->
+        {% if not e.resultado and usuario.papel.value in ['supervisor', 'gestor'] %}
+        <div class="mt-3 flex gap-2">
+          <button @click="aprovarEtapa({{ e.id }}, 'conforme')"
+            class="flex-1 text-xs bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition font-semibold">
+            ✓ Aprovar
+          </button>
+          <button @click="aprovarEtapa({{ e.id }}, 'nao_conforme')"
+            class="flex-1 text-xs bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg transition font-semibold">
+            ✗ Reprovar
+          </button>
+        </div>
+        {% endif %}
+      </div>
       {% endfor %}
-    </ol>
+    </div>
     {% else %}
-    <p class="text-sm text-gray-400 text-center py-6">Nenhuma etapa registrada ainda.</p>
+    <p class="text-sm text-gray-400 text-center py-8">Nenhuma etapa registrada ainda.</p>
     {% endif %}
   </div>
 
-  <!-- Registrar nova etapa -->
+  <!-- Registrar nova etapa (colapsável) -->
   {% if pendencia.status.value not in ['resolvida', 'cancelada'] %}
-  <div class="bg-white rounded-xl border border-blue-200 p-5">
-    <h2 class="text-sm font-semibold text-gray-700 mb-4">Registrar Nova Etapa de Correção</h2>
-    <div class="space-y-4">
+  <div x-data="{ aberto: false }" class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+
+    <!-- Botão para abrir -->
+    <button @click="aberto = !aberto"
+      class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition">
+      <span class="text-sm font-semibold text-blue-700 flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Registrar Nova Etapa de Correção
+      </span>
+      <svg class="w-4 h-4 text-gray-400 transition-transform" :class="aberto ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </button>
+
+    <!-- Formulário -->
+    <div x-show="aberto" x-cloak class="border-t border-gray-100 px-5 pb-5 pt-4 space-y-4">
+
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">O que foi feito? <span class="text-red-500">*</span></label>
         <textarea x-model="novaEtapa.descricao" rows="3"
-          class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           placeholder="Descreva a ação corretiva realizada..."></textarea>
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Observações</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Observações <span class="text-xs text-gray-400 font-normal">— opcional</span></label>
         <input type="text" x-model="novaEtapa.observacoes"
-          class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Opcional" />
+          class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Ex: aguardando peça, parcialmente corrigido..." />
       </div>
 
-      <!-- Captura de mídia da etapa -->
+      <!-- Captura de mídia -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          Fotos / Vídeos da correção
-          <span class="text-xs text-gray-400 font-normal ml-1">— câmera apenas</span>
-        </label>
-
-        <div class="flex gap-3">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Fotos / Vídeos da correção</label>
+        <div class="flex gap-2">
           <button type="button" @click="abrirCamera('foto')"
             class="flex-1 flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 rounded-xl py-3 text-sm font-medium text-gray-600 hover:text-blue-700 transition">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -193,7 +291,7 @@
                 d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
-            Tirar Foto
+            Foto
           </button>
           <button type="button" @click="abrirCamera('video')"
             class="flex-1 flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 hover:border-red-500 hover:bg-red-50 rounded-xl py-3 text-sm font-medium text-gray-600 hover:text-red-700 transition">
@@ -201,12 +299,11 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
             </svg>
-            Gravar Vídeo
+            Vídeo
           </button>
         </div>
 
-        <!-- Prévia -->
-        <div x-show="midias.length > 0" class="mt-3 grid grid-cols-4 gap-2">
+        <div x-show="midias.length > 0" class="mt-2 grid grid-cols-4 gap-1.5">
           <template x-for="(m, idx) in midias" :key="idx">
             <div class="relative rounded-xl overflow-hidden bg-gray-900 aspect-square">
               <template x-if="m.tipo === 'foto'">
@@ -214,34 +311,28 @@
               </template>
               <template x-if="m.tipo === 'video'">
                 <div class="w-full h-full flex items-center justify-center">
-                  <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                  </svg>
+                  <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                 </div>
               </template>
-              <span class="absolute bottom-0.5 left-0.5 text-xs"
-                x-text="m.tipo === 'foto' ? '📷' : '🎥'"></span>
+              <span class="absolute bottom-0.5 left-0.5 text-xs" x-text="m.tipo === 'foto' ? '📷' : '🎥'"></span>
               <button type="button" @click="removerMidia(idx)"
-                class="absolute top-0.5 right-0.5 w-5 h-5 bg-black bg-opacity-60 text-white rounded-full flex items-center justify-center text-xs">×</button>
+                class="absolute top-0.5 right-0.5 w-5 h-5 bg-black bg-opacity-60 text-white rounded-full flex items-center justify-center text-xs hover:bg-opacity-90">×</button>
             </div>
           </template>
-
           <button type="button" @click="abrirCamera('foto')"
-            class="aspect-square rounded-xl border-2 border-dashed border-gray-300 hover:border-blue-400 flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-blue-500 transition">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            class="aspect-square rounded-xl border-2 border-dashed border-gray-300 hover:border-blue-400 flex items-center justify-center text-gray-400 hover:text-blue-500 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
-            <span class="text-xs">Mais</span>
           </button>
         </div>
       </div>
 
-      <div x-show="erro" x-cloak class="p-3 bg-orange-50 border border-orange-200 text-orange-700 text-sm rounded-lg" x-text="erro"></div>
-      <div x-show="erroEtapa" x-cloak class="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg" x-text="erroEtapa"></div>
+      <div x-show="erro" x-cloak class="p-3 bg-orange-50 border border-orange-200 text-orange-700 text-sm rounded-xl" x-text="erro"></div>
+      <div x-show="erroEtapa" x-cloak class="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl" x-text="erroEtapa"></div>
 
       <button @click="salvarEtapa" :disabled="salvandoEtapa"
-        class="w-full bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg transition text-sm">
+        class="w-full bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition text-sm">
         <span x-show="!salvandoEtapa">Registrar Etapa</span>
         <span x-show="salvandoEtapa" x-cloak>Salvando...</span>
       </button>
@@ -255,6 +346,39 @@
 {% block scripts %}
 <script src="/static/js/camera.js"></script>
 <script>
+function galeria() {
+  return {
+    galeriaAberta: false,
+    galeriaIndex: 0,
+    galeriaItens: [],
+
+    abrirGaleria(index, midias) {
+      this.galeriaItens = midias.map(m => ({
+        tipo: m.tipo?.value ?? m.tipo,
+        drive_url: m.drive_url,
+        embed_url: m.drive_url?.replace('/view', '/preview') ?? m.drive_url,
+        thumb_url: m.drive_thumb_url,
+      }));
+      this.galeriaIndex = index;
+      this.galeriaAberta = true;
+      document.body.style.overflow = 'hidden';
+    },
+
+    fecharGaleria() {
+      this.galeriaAberta = false;
+      document.body.style.overflow = '';
+    },
+
+    anteriorGaleria() {
+      this.galeriaIndex = (this.galeriaIndex - 1 + this.galeriaItens.length) % this.galeriaItens.length;
+    },
+
+    proximoGaleria() {
+      this.galeriaIndex = (this.galeriaIndex + 1) % this.galeriaItens.length;
+    },
+  };
+}
+
 function detalhePendencia(pendenciaId, papel, setor) {
   return {
     pendenciaId,
