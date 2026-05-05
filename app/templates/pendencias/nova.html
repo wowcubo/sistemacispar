@@ -2,7 +2,9 @@
 {% block title %}Nova Pendência{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto space-y-4" x-data="Object.assign(camera(), novaPendencia())">
+<div class="max-w-2xl mx-auto space-y-4"
+  x-data="Object.assign(camera(), novaPendencia())"
+  x-init="carregarResponsaveis()">
 
   {% include '_camera_modal.html' %}
 
@@ -15,7 +17,6 @@
     <h1 class="text-xl font-bold text-gray-900">Nova Pendência</h1>
   </div>
 
-  <!-- Formulário -->
   <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
     <form @submit.prevent="enviar" class="divide-y divide-gray-100">
 
@@ -52,17 +53,29 @@
         </div>
       </div>
 
-      <!-- Data limite -->
-      <div class="px-5 py-4">
-        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Data Limite <span class="text-xs text-gray-300 font-normal normal-case">— opcional</span></label>
-        <input type="date" x-model="form.data_limite"
-          class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      <!-- Responsável + Data limite -->
+      <div class="px-5 py-4 grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Responsável <span class="text-xs text-gray-300 font-normal normal-case">— opcional</span></label>
+          <select x-model="form.responsavel_id"
+            class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Sem responsável</option>
+            <template x-for="r in responsaveis" :key="r.id">
+              <option :value="r.id" x-text="r.nome"></option>
+            </template>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Data Limite <span class="text-xs text-gray-300 font-normal normal-case">— opcional</span></label>
+          <input type="date" x-model="form.data_limite"
+            class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
       </div>
 
       <!-- Descrição -->
       <div class="px-5 py-4">
-        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Descrição <span class="text-red-500">*</span></label>
-        <textarea x-model="form.descricao" required rows="4"
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Descrição <span class="text-xs text-gray-300 font-normal normal-case">— opcional</span></label>
+        <textarea x-model="form.descricao" rows="4"
           class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           placeholder="Descreva o problema em detalhes..."></textarea>
       </div>
@@ -91,7 +104,6 @@
           </button>
         </div>
 
-        <!-- Pré-visualização -->
         <div x-show="midias.length > 0" class="mt-3 grid grid-cols-3 gap-2">
           <template x-for="(m, idx) in midias" :key="idx">
             <div class="relative rounded-xl overflow-hidden bg-gray-900 aspect-square">
@@ -111,7 +123,6 @@
                 class="absolute top-1 right-1 w-6 h-6 bg-black bg-opacity-60 text-white rounded-full flex items-center justify-center text-sm hover:bg-opacity-90 transition">×</button>
             </div>
           </template>
-
           <button type="button" @click="abrirCamera('foto')"
             class="aspect-square rounded-xl border-2 border-dashed border-gray-300 hover:border-blue-400 flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-blue-500 transition">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,9 +146,7 @@
           <button type="submit" :disabled="salvando"
             class="flex-1 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition text-sm">
             <span x-show="!salvando">Registrar Pendência</span>
-            <span x-show="salvando" x-cloak>
-              <span class="inline-block animate-spin mr-1">⏳</span> Salvando...
-            </span>
+            <span x-show="salvando" x-cloak>⏳ Salvando...</span>
           </button>
           <a href="/pendencias-page"
             class="px-5 py-3 border border-gray-300 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition text-center">
@@ -156,14 +165,22 @@
 <script>
 function novaPendencia() {
   return {
-    form: { titulo: '', setor: 'Geral', criticidade: 'menor', descricao: '', data_limite: '' },
+    form: { titulo: '', setor: 'Geral', criticidade: 'menor', descricao: '', data_limite: '', responsavel_id: '' },
+    responsaveis: [],
     salvando: false,
     erroEnvio: '',
 
+    async carregarResponsaveis() {
+      try {
+        const res = await fetch('/usuarios/responsaveis');
+        if (res.ok) this.responsaveis = await res.json();
+      } catch {}
+    },
+
     async enviar() {
       this.erroEnvio = '';
-      if (!this.form.titulo || !this.form.setor || !this.form.descricao) {
-        this.erroEnvio = 'Preencha todos os campos obrigatórios.';
+      if (!this.form.titulo || !this.form.setor) {
+        this.erroEnvio = 'Preencha o título e o setor.';
         return;
       }
       this.salvando = true;
@@ -173,10 +190,11 @@ function novaPendencia() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             titulo: this.form.titulo,
-            descricao: this.form.descricao,
+            descricao: this.form.descricao || null,
             setor: this.form.setor,
             criticidade: this.form.criticidade,
             data_limite: this.form.data_limite || null,
+            responsavel_id: this.form.responsavel_id ? parseInt(this.form.responsavel_id) : null,
           }),
         });
         if (!res.ok) throw new Error((await res.json()).detail || 'Erro ao criar pendência');

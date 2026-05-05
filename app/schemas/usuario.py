@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
+from typing import Optional
 from app.models.usuario import Papel, Setor
 
 
@@ -12,19 +13,22 @@ class UsuarioBase(BaseModel):
 
 class UsuarioCriar(UsuarioBase):
     senha: str
+    responsavel_padrao_id: Optional[int] = None
 
 
 class UsuarioAtualizar(BaseModel):
-    nome: str | None = None
-    papel: Papel | None = None
-    setor: Setor | None = None
-    ativo: bool | None = None
-    senha: str | None = None
+    nome: Optional[str] = None
+    papel: Optional[Papel] = None
+    setor: Optional[Setor] = None
+    ativo: Optional[bool] = None
+    senha: Optional[str] = None
+    responsavel_padrao_id: Optional[int] = None
 
 
 class UsuarioResposta(UsuarioBase):
     id: int
     ativo: bool
+    responsavel_padrao_id: Optional[int] = None
     criado_em: datetime
 
     model_config = {"from_attributes": True}

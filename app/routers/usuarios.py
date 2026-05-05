@@ -20,6 +20,17 @@ def listar(db: Session = Depends(get_db), _: Usuario = Depends(require_gestor)):
     return db.query(Usuario).order_by(Usuario.nome).all()
 
 
+@router.get("/responsaveis", response_model=list[UsuarioResposta])
+def listar_responsaveis(db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)):
+    """Retorna usuários que podem ser responsáveis (supervisor e gestor)."""
+    return (
+        db.query(Usuario)
+        .filter(Usuario.papel.in_([Papel.supervisor, Papel.gestor]), Usuario.ativo == True)
+        .order_by(Usuario.nome)
+        .all()
+    )
+
+
 @router.post("/", response_model=UsuarioResposta, status_code=status.HTTP_201_CREATED)
 def criar(dados: UsuarioCriar, db: Session = Depends(get_db), _: Usuario = Depends(require_gestor)):
     if db.query(Usuario).filter(Usuario.email == dados.email).first():
@@ -30,6 +41,7 @@ def criar(dados: UsuarioCriar, db: Session = Depends(get_db), _: Usuario = Depen
         senha_hash=hash_senha(dados.senha),
         papel=dados.papel,
         setor=dados.setor,
+        responsavel_padrao_id=dados.responsavel_padrao_id,
     )
     db.add(usuario)
     db.commit()

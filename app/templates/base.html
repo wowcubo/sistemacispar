@@ -68,5 +68,11 @@
 </footer>
 
 {% block scripts %}{% endblock %}
+<script>
+  // Força reload ao voltar com botão back/forward (bfcache)
+  window.addEventListener('pageshow', function(e) {
+    if (e.persisted) window.location.reload();
+  });
+</script>
 </body>
 </html>

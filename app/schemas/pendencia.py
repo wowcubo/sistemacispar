@@ -7,11 +7,12 @@ from app.schemas.midia import MidiaResposta
 
 class PendenciaCriar(BaseModel):
     titulo: str
-    descricao: str
+    descricao: Optional[str] = None
     setor: str
     criticidade: Criticidade
     data_limite: Optional[date] = None
     supervisor_id: Optional[int] = None
+    responsavel_id: Optional[int] = None
     registro_id: Optional[int] = None
 
 
@@ -22,12 +23,13 @@ class PendenciaAtualizar(BaseModel):
     status: Optional[StatusPendencia] = None
     data_limite: Optional[date] = None
     supervisor_id: Optional[int] = None
+    responsavel_id: Optional[int] = None
 
 
 class PendenciaResposta(BaseModel):
     id: int
     titulo: str
-    descricao: str
+    descricao: Optional[str]
     setor: str
     criticidade: Criticidade
     status: StatusPendencia
@@ -35,7 +37,10 @@ class PendenciaResposta(BaseModel):
     data_limite: Optional[date]
     data_resolucao: Optional[date]
     operador_id: int
+    operador_nome: Optional[str] = None
     supervisor_id: Optional[int]
+    responsavel_id: Optional[int]
+    responsavel_nome: Optional[str] = None
     registro_id: Optional[int]
     criado_em: datetime
     total_etapas: int = 0
@@ -63,6 +68,7 @@ class EtapaResposta(BaseModel):
     resultado: Optional[ResultadoEtapa]
     observacoes: Optional[str]
     usuario_id: int
+    usuario_nome: Optional[str] = None
     data: datetime
     midias: list[MidiaResposta] = []
 

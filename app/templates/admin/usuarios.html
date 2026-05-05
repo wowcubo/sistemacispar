@@ -2,10 +2,10 @@
 {% block title %}Usuários{% endblock %}
 
 {% block content %}
-<div class="space-y-5" x-data="adminUsuarios()">
+<div class="space-y-5" x-data="adminUsuarios()" x-init="carregarResponsaveis()">
 
   <div class="flex items-center justify-between">
-    <h1 class="text-2xl font-bold text-gray-900">Usuários</h1>
+    <h1 class="text-xl font-bold text-gray-900">Usuários</h1>
     <button @click="abrirModal()"
       class="bg-blue-700 hover:bg-blue-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -15,7 +15,7 @@
     </button>
   </div>
 
-  <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+  <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
     <table class="w-full text-sm">
       <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
         <tr>
@@ -23,11 +23,12 @@
           <th class="px-5 py-3 text-left hidden md:table-cell">E-mail</th>
           <th class="px-5 py-3 text-left hidden sm:table-cell">Papel</th>
           <th class="px-5 py-3 text-left hidden sm:table-cell">Setor</th>
+          <th class="px-5 py-3 text-left hidden lg:table-cell">Responsável padrão</th>
           <th class="px-5 py-3 text-left">Status</th>
           <th class="px-5 py-3"></th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-50">
+      <tbody class="divide-y divide-gray-100">
         {% for u in usuarios %}
         <tr class="hover:bg-gray-50 transition">
           <td class="px-5 py-3 font-medium text-gray-900">{{ u.nome }}</td>
@@ -41,6 +42,11 @@
             </span>
           </td>
           <td class="px-5 py-3 text-gray-500 hidden sm:table-cell">{{ u.setor.value }}</td>
+          <td class="px-5 py-3 text-gray-500 hidden lg:table-cell text-xs">
+            {% if u.responsavel_padrao_id %}
+              {% for uu in usuarios if uu.id == u.responsavel_padrao_id %}{{ uu.nome }}{% endfor %}
+            {% else %}—{% endif %}
+          </td>
           <td class="px-5 py-3">
             <span class="px-2 py-0.5 rounded-full text-xs font-medium
               {% if u.ativo %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-500{% endif %}">
@@ -48,7 +54,7 @@
             </span>
           </td>
           <td class="px-5 py-3 text-right">
-            <button @click="editarUsuario({{ u.id }}, '{{ u.nome }}', '{{ u.email }}', '{{ u.papel.value }}', '{{ u.setor.value }}', {{ u.ativo | lower }})"
+            <button @click="editarUsuario({{ u.id }}, '{{ u.nome }}', '{{ u.email }}', '{{ u.papel.value }}', '{{ u.setor.value }}', {{ u.ativo | lower }}, {{ u.responsavel_padrao_id or 'null' }})"
               class="text-xs text-blue-600 hover:underline">Editar</button>
           </td>
         </tr>
@@ -59,7 +65,7 @@
 
   <!-- Modal Novo/Editar -->
   <div x-show="modal" x-cloak class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4" @click.outside="modal = false">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4 max-h-screen overflow-y-auto" @click.outside="modal = false">
       <h2 class="font-bold text-gray-900" x-text="editandoId ? 'Editar Usuário' : 'Novo Usuário'"></h2>
 
       <div>
@@ -67,16 +73,22 @@
         <input type="text" x-model="form.nome"
           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
+
       <div x-show="!editandoId">
         <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
         <input type="email" x-model="form.email"
           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
+
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Senha <span x-show="editandoId" class="text-gray-400 font-normal">(deixe em branco para não alterar)</span></label>
+        <label class="block text-sm font-medium text-gray-700 mb-1">
+          Senha
+          <span x-show="editandoId" class="text-gray-400 font-normal text-xs">(deixe em branco para não alterar)</span>
+        </label>
         <input type="password" x-model="form.senha"
           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
+
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Papel</label>
@@ -100,6 +112,19 @@
           </select>
         </div>
       </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Responsável padrão</label>
+        <select x-model="form.responsavel_padrao_id"
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="">Nenhum</option>
+          <template x-for="r in responsaveis" :key="r.id">
+            <option :value="r.id" x-text="r.nome + ' (' + r.papel + ')'"></option>
+          </template>
+        </select>
+        <p class="text-xs text-gray-400 mt-1">Atribuído automaticamente às pendências criadas por este usuário.</p>
+      </div>
+
       <div x-show="editandoId" class="flex items-center gap-2">
         <input type="checkbox" x-model="form.ativo" id="ativo" class="rounded" />
         <label for="ativo" class="text-sm text-gray-700">Usuário ativo</label>
@@ -132,18 +157,26 @@ function adminUsuarios() {
     editandoId: null,
     salvando: false,
     erro: '',
-    form: { nome: '', email: '', senha: '', papel: 'operador', setor: 'Geral', ativo: true },
+    responsaveis: [],
+    form: { nome: '', email: '', senha: '', papel: 'operador', setor: 'Geral', ativo: true, responsavel_padrao_id: '' },
+
+    async carregarResponsaveis() {
+      try {
+        const res = await fetch('/usuarios/responsaveis');
+        if (res.ok) this.responsaveis = await res.json();
+      } catch {}
+    },
 
     abrirModal() {
       this.editandoId = null;
-      this.form = { nome: '', email: '', senha: '', papel: 'operador', setor: 'Geral', ativo: true };
+      this.form = { nome: '', email: '', senha: '', papel: 'operador', setor: 'Geral', ativo: true, responsavel_padrao_id: '' };
       this.erro = '';
       this.modal = true;
     },
 
-    editarUsuario(id, nome, email, papel, setor, ativo) {
+    editarUsuario(id, nome, email, papel, setor, ativo, responsavelId) {
       this.editandoId = id;
-      this.form = { nome, email, senha: '', papel, setor, ativo };
+      this.form = { nome, email, senha: '', papel, setor, ativo, responsavel_padrao_id: responsavelId || '' };
       this.erro = '';
       this.modal = true;
     },
@@ -156,6 +189,7 @@ function adminUsuarios() {
         const method = this.editandoId ? 'PUT' : 'POST';
         const body = { ...this.form };
         if (this.editandoId && !body.senha) delete body.senha;
+        body.responsavel_padrao_id = body.responsavel_padrao_id ? parseInt(body.responsavel_padrao_id) : null;
         const res = await fetch(url, {
           method,
           headers: { 'Content-Type': 'application/json' },

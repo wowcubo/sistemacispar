@@ -127,24 +127,59 @@ def pagina_pendencias(
     status: str = "",
     setor: str = "",
     criticidade: str = "",
+    responsavel_id: str = "",
+    minha: str = "",
+    pagina: int = 1,
 ):
+    POR_PAGINA = 10
     q = db.query(Pendencia)
+
+    # Por padrão, operadores veem apenas as suas pendências
     if usuario.papel == Papel.operador:
         q = q.filter(Pendencia.operador_id == usuario.id)
+    # Para supervisores/gestores, se "minha" está ativo filtra as do usuário
+    elif minha == "1":
+        q = q.filter(
+            (Pendencia.responsavel_id == usuario.id) | (Pendencia.operador_id == usuario.id)
+        )
+
     if status:
         q = q.filter(Pendencia.status == status)
     if setor:
         q = q.filter(Pendencia.setor == setor)
     if criticidade:
         q = q.filter(Pendencia.criticidade == criticidade)
-    pendencias_list = q.order_by(Pendencia.criado_em.desc()).all()
+    if responsavel_id:
+        q = q.filter(Pendencia.responsavel_id == int(responsavel_id))
+
+    total = q.count()
+    total_paginas = max(1, (total + POR_PAGINA - 1) // POR_PAGINA)
+    pagina = max(1, min(pagina, total_paginas))
+    pendencias_list = q.order_by(Pendencia.criado_em.desc()).offset((pagina - 1) * POR_PAGINA).limit(POR_PAGINA).all()
+
+    # Enriquece com nome do operador e responsável
+    def enrich(p):
+        op = db.get(Usuario, p.operador_id)
+        resp = db.get(Usuario, p.responsavel_id) if p.responsavel_id else None
+        return {"pendencia": p, "operador_nome": op.nome if op else "—", "responsavel_nome": resp.nome if resp else "—"}
+
+    responsaveis = (
+        db.query(Usuario)
+        .filter(Usuario.papel.in_([Papel.supervisor, Papel.gestor]), Usuario.ativo == True)
+        .order_by(Usuario.nome)
+        .all()
+    )
 
     return templates.TemplateResponse("pendencias/list.html", {
         "request": request,
         "usuario": usuario,
         "settings": settings,
-        "pendencias": pendencias_list,
-        "filtros": {"status": status, "setor": setor, "criticidade": criticidade},
+        "pendencias": [enrich(p) for p in pendencias_list],
+        "filtros": {"status": status, "setor": setor, "criticidade": criticidade, "responsavel_id": responsavel_id, "minha": minha},
+        "pagina": pagina,
+        "total_paginas": total_paginas,
+        "total": total,
+        "responsaveis": responsaveis,
     })
 
 
@@ -184,6 +219,10 @@ def pagina_detalhe_pendencia(
             "drive_thumb_url": m.drive_thumb_url,
         }
 
+    def nome_usuario(uid):
+        u = db.get(Usuario, uid)
+        return u.nome if u else "—"
+
     etapas_com_midia = []
     for e in sorted(p.etapas, key=lambda x: x.numero):
         midias_etapa = db.query(ArquivoMidia).filter(
@@ -194,7 +233,11 @@ def pagina_detalhe_pendencia(
             "etapa": e,
             "midias": midias_etapa,
             "midias_json": [midia_dict(m) for m in midias_etapa],
+            "usuario_nome": nome_usuario(e.usuario_id),
         })
+
+    operador = db.get(Usuario, p.operador_id)
+    responsavel = db.get(Usuario, p.responsavel_id) if p.responsavel_id else None
 
     return templates.TemplateResponse("pendencias/detalhe.html", {
         "request": request,
@@ -204,6 +247,8 @@ def pagina_detalhe_pendencia(
         "midias": midias_pendencia,
         "midias_json": [midia_dict(m) for m in midias_pendencia],
         "etapas": etapas_com_midia,
+        "operador_nome": operador.nome if operador else "—",
+        "responsavel_nome": responsavel.nome if responsavel else None,
     })
 
 

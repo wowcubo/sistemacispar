@@ -30,7 +30,7 @@ class Pendencia(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     titulo: Mapped[str] = mapped_column(String(200))
-    descricao: Mapped[str] = mapped_column(Text)
+    descricao: Mapped[str | None] = mapped_column(Text, nullable=True)
     setor: Mapped[str] = mapped_column(String(50))
     criticidade: Mapped[Criticidade] = mapped_column(Enum(Criticidade))
     status: Mapped[StatusPendencia] = mapped_column(
@@ -42,6 +42,7 @@ class Pendencia(Base):
 
     operador_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"))
     supervisor_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"))
+    responsavel_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"))
     registro_id: Mapped[int | None] = mapped_column(ForeignKey("registros_checklist.id"))
 
     criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
@@ -53,6 +54,9 @@ class Pendencia(Base):
         back_populates="pendencias_abertas", foreign_keys=[operador_id]
     )
     supervisor: Mapped["Usuario | None"] = relationship(foreign_keys=[supervisor_id])
+    responsavel: Mapped["Usuario | None"] = relationship(
+        foreign_keys=[responsavel_id], back_populates="pendencias_responsavel"
+    )
     registro: Mapped["RegistroChecklist | None"] = relationship()
     etapas: Mapped[list["EtapaVerificacao"]] = relationship(
         back_populates="pendencia", order_by="EtapaVerificacao.numero", cascade="all, delete-orphan"

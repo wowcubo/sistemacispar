@@ -26,6 +26,13 @@ def _load_pendencia(db: Session, id: int) -> Pendencia:
     return p
 
 
+def _nome_usuario(db: Session, uid: int | None) -> str | None:
+    if uid is None:
+        return None
+    u = db.get(Usuario, uid)
+    return u.nome if u else None
+
+
 def _pendencia_to_resp(p: Pendencia, db: Session) -> PendenciaResposta:
     midias = db.query(ArquivoMidia).filter(
         ArquivoMidia.entidade_tipo == EntidadeTipo.pendencia,
@@ -34,6 +41,8 @@ def _pendencia_to_resp(p: Pendencia, db: Session) -> PendenciaResposta:
     data = PendenciaResposta.model_validate(p)
     data.total_etapas = len(p.etapas)
     data.midias = midias  # type: ignore
+    data.operador_nome = _nome_usuario(db, p.operador_id)
+    data.responsavel_nome = _nome_usuario(db, p.responsavel_id)
     return data
 
 
@@ -42,6 +51,7 @@ def listar(
     setor: str | None = Query(None),
     status: StatusPendencia | None = Query(None),
     criticidade: str | None = Query(None),
+    responsavel_id: int | None = Query(None),
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ):
@@ -54,6 +64,8 @@ def listar(
         q = q.filter(Pendencia.status == status)
     if criticidade:
         q = q.filter(Pendencia.criticidade == criticidade)
+    if responsavel_id:
+        q = q.filter(Pendencia.responsavel_id == responsavel_id)
     pendencias = q.order_by(Pendencia.criado_em.desc()).all()
     return [_pendencia_to_resp(p, db) for p in pendencias]
 
@@ -64,6 +76,11 @@ def criar(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ):
+    # Usa responsável padrão do usuário se não informado
+    responsavel_id = dados.responsavel_id
+    if responsavel_id is None and usuario.responsavel_padrao_id:
+        responsavel_id = usuario.responsavel_padrao_id
+
     p = Pendencia(
         titulo=dados.titulo,
         descricao=dados.descricao,
@@ -71,6 +88,7 @@ def criar(
         criticidade=dados.criticidade,
         data_limite=dados.data_limite,
         supervisor_id=dados.supervisor_id,
+        responsavel_id=responsavel_id,
         registro_id=dados.registro_id,
         operador_id=usuario.id,
     )
@@ -183,4 +201,5 @@ def _etapa_to_resp(etapa: EtapaVerificacao, db: Session) -> EtapaResposta:
     ).all()
     data = EtapaResposta.model_validate(etapa)
     data.midias = midias  # type: ignore
+    data.usuario_nome = _nome_usuario(db, etapa.usuario_id)
     return data
