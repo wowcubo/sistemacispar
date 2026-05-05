@@ -1,0 +1,61 @@
+{# Inclua este partial dentro de qualquer template que use o componente camera() #}
+
+<!-- Modal da câmera -->
+<div x-show="aberto" x-cloak
+  class="fixed inset-0 z-50 bg-black flex flex-col">
+
+  <!-- Viewfinder -->
+  <div class="flex-1 relative overflow-hidden">
+    <video id="camera-viewfinder" autoplay playsinline muted
+      class="w-full h-full object-cover"></video>
+
+    <!-- Indicador de gravação -->
+    <div x-show="gravando" class="absolute top-4 left-4 flex items-center gap-2 bg-red-600 text-white text-sm font-bold px-3 py-1 rounded-full">
+      <span class="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+      GRAVANDO
+    </div>
+
+    <!-- Modo atual -->
+    <div class="absolute top-4 right-4 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded-full"
+      x-text="modo === 'foto' ? '📷 Foto' : '🎥 Vídeo'"></div>
+  </div>
+
+  <!-- Controles -->
+  <div class="bg-black px-6 py-6 flex items-center justify-between gap-4 safe-area-bottom">
+
+    <!-- Fechar -->
+    <button @click="fecharCamera()" type="button"
+      class="w-12 h-12 rounded-full border-2 border-gray-500 flex items-center justify-center text-gray-400 hover:border-white hover:text-white transition">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+
+    <!-- Botão principal: capturar foto OU iniciar/parar vídeo -->
+    <template x-if="modo === 'foto'">
+      <button @click="tirarFoto()" type="button"
+        class="w-20 h-20 rounded-full bg-white border-4 border-gray-300 hover:border-blue-400 transition flex items-center justify-center shadow-lg">
+        <div class="w-14 h-14 rounded-full bg-white border-2 border-gray-400"></div>
+      </button>
+    </template>
+
+    <template x-if="modo === 'video'">
+      <button type="button"
+        @click="gravando ? pararGravacao() : iniciarGravacao()"
+        :class="gravando
+          ? 'bg-red-600 border-red-400 hover:border-red-300'
+          : 'bg-white border-gray-300 hover:border-red-400'"
+        class="w-20 h-20 rounded-full border-4 transition flex items-center justify-center shadow-lg">
+        <div :class="gravando ? 'w-8 h-8 rounded bg-white' : 'w-14 h-14 rounded-full bg-red-500'"></div>
+      </button>
+    </template>
+
+    <!-- Placeholder direita (simetria) -->
+    <div class="w-12 h-12"></div>
+  </div>
+
+  <!-- Erro -->
+  <div x-show="erro" x-cloak
+    class="absolute bottom-24 left-0 right-0 mx-4 p-3 bg-red-900 text-red-200 text-sm rounded-xl text-center"
+    x-text="erro"></div>
+</div>
