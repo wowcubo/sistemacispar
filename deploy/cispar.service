@@ -1,0 +1,22 @@
+[Unit]
+Description=CISPAR - Sistema de Rotinas SISBI
+After=network.target postgresql.service
+
+[Service]
+Type=exec
+User=cispar
+Group=cispar
+WorkingDirectory=/opt/cispar
+EnvironmentFile=/opt/cispar/.env
+ExecStart=/opt/cispar/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 2
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Segurança
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
