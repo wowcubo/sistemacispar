@@ -19,6 +19,18 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> Usuario
     return usuario
 
 
+def get_current_user_page(request: Request, db: Session = Depends(get_db)) -> Usuario:
+    """Para rotas HTML — redireciona para /login em vez de retornar JSON 401."""
+    token = request.cookies.get("access_token")
+    if not token:
+        from fastapi.responses import RedirectResponse
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="redirect:/login")
+    usuario = obter_usuario_por_token(db, token)
+    if not usuario:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="redirect:/login")
+    return usuario
+
+
 def get_current_user_optional(request: Request, db: Session = Depends(get_db)) -> Usuario | None:
     token = request.cookies.get("access_token")
     if not token:

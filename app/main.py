@@ -1,7 +1,8 @@
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.orm import Session
 from pathlib import Path
 
@@ -18,6 +19,18 @@ from app.models.midia import ArquivoMidia, EntidadeTipo
 settings = get_settings()
 
 app = FastAPI(title=settings.app_name, docs_url="/api/docs" if settings.debug else None)
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Redireciona para /login se 401 e a requisição vem de browser (não API)."""
+    if exc.status_code == 401:
+        accept = request.headers.get("accept", "")
+        # Requisições de browser aceitam HTML; APIs enviam application/json
+        if "text/html" in accept:
+            return RedirectResponse(url="/login", status_code=303)
+    from fastapi.responses import JSONResponse
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 # Criar tabelas (em produção usar Alembic)
 Base.metadata.create_all(bind=engine)
